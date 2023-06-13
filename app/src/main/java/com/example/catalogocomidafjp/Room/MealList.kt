@@ -1,4 +1,4 @@
-package com.example.catalogocomidafjp.Model
+package com.example.catalogocomidafjp.Room
 
 data class MealList(
     val meals: List<Meal>

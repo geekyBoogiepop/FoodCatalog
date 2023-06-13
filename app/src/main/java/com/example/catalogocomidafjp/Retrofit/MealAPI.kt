@@ -1,6 +1,6 @@
 package com.example.catalogocomidafjp.Retrofit
 
-import com.example.catalogocomidafjp.Model.MealList
+import com.example.catalogocomidafjp.Room.MealList
 import retrofit2.Call
 import retrofit2.http.GET
 
