@@ -1,9 +1,10 @@
-package com.example.catalogocomidafjp
+package com.example.catalogocomidafjp.Activities
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import androidx.navigation.Navigation
 import androidx.navigation.ui.NavigationUI
+import com.example.catalogocomidafjp.R
 import com.example.catalogocomidafjp.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
