@@ -1,57 +1,128 @@
 package com.example.catalogocomidafjp.Fragments
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.annotation.ContentView
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.GridLayoutManager
+import com.example.catalogocomidafjp.Adapters.FavoritesMealAdapter
 import com.example.catalogocomidafjp.R
+import com.example.catalogocomidafjp.Room.ClientModel
+import com.example.catalogocomidafjp.Room.Meal
+import com.example.catalogocomidafjp.Room.MealList
+import com.example.catalogocomidafjp.ViewModel.MealViewModel
+import com.example.catalogocomidafjp.databinding.FragmentFavoritesBinding
+import com.example.catalogocomidafjp.databinding.FragmentHomeBinding
+import java.util.concurrent.CompletableFuture
 
-/**
- * A simple [Fragment] subclass.
- * Use the [FavoritesFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
+
 class FavoritesFragment : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
+    private lateinit var binding: FragmentFavoritesBinding
+    private lateinit var viewModel: MealViewModel
+    private lateinit var favoritesMealAdapter: FavoritesMealAdapter
+    var favorites: List<String> = emptyList()
+    var meals: MutableList<Meal> = mutableListOf()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
-        }
+        viewModel = ViewModelProvider(this)[MealViewModel::class.java]
     }
+
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_favorites, container, false)
+        binding = FragmentFavoritesBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment FavoritesFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            FavoritesFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+
+//        var client = viewModel.getClientFromFireStore()
+//        var favorites: List<String> = client?.favorites ?: emptyList()
+//        var favorites: List<String> = emptyList()
+//
+//        viewModel.getClientFromFireStore { cliente ->
+//            if (cliente != null) {
+//                favorites = cliente?.favorites ?: emptyList()
+//
+//            }
+//        }
+//
+//        Log.d("Favorites Fragment", "FFragment ${favorites}")
+//        favoritesMealAdapter = FavoritesMealAdapter(favorites)
+//
+//        binding.rvFavorites.apply {
+//            layoutManager = GridLayoutManager(context, 2, GridLayoutManager.VERTICAL, false)
+//            adapter = favoritesMealAdapter
+//        }
+
+        viewModel.getClientFromFireStore { cliente ->
+            if (cliente != null) {
+                favorites = cliente.favorites ?: emptyList()
+                loadMeals()
+            }
+        }
+    }
+
+//    private fun loadMeals(){
+//        for (mealId in favorites) {
+//            viewModel.getMealInfo(mealId) { meal ->
+//                if (meal != null) {
+//                    meals.add(meal)
+//                    Log.d("Favorite Fragment", "Meal Name: ${meal.strMeal}")
+//                } else {
+//                    Log.d("Favorite Fragment", "Error al recuperar detalles de la comida")
+//                }
+//            }
+//        }
+//        initializeFavoritesRecyclerView()
+//    }
+
+    private fun loadMeals() {
+        val mealPromises = mutableListOf<CompletableFuture<Meal?>>()
+
+        for (mealId in favorites) {
+            val mealPromise = CompletableFuture<Meal?>()
+
+            viewModel.getMealInfo(mealId) { meal ->
+                mealPromise.complete(meal)
+            }
+
+            mealPromises.add(mealPromise)
+        }
+
+        CompletableFuture.allOf(*mealPromises.toTypedArray()).thenAccept {
+            meals.clear()
+
+            for (mealPromise in mealPromises) {
+                val meal = mealPromise.get()
+                if (meal != null) {
+                    meals.add(meal)
+                    Log.d("Favorite Fragment", "Meal Name: ${meal.strMeal}")
+                } else {
+                    Log.d("Favorite Fragment", "Error al recuperar detalles de la comida")
                 }
             }
+
+            initializeFavoritesRecyclerView()
+        }
+    }
+
+
+    private fun initializeFavoritesRecyclerView() {
+        Log.d("Favorites Fragment", "Favorites: $favorites")
+        Log.d("Favorites Fragment", "Favorites Meals: $meals")
+        favoritesMealAdapter = FavoritesMealAdapter(meals, viewModel)
+
+        binding.rvFavorites.apply {
+            layoutManager = GridLayoutManager(context, 2, GridLayoutManager.VERTICAL, false)
+            adapter = favoritesMealAdapter
+        }
     }
 }

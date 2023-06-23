@@ -37,4 +37,5 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     fun observeRandomMealLiveData() : LiveData<Meal> {
         return randomMealLiveData
     }
+
 }
